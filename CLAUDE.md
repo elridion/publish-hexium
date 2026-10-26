@@ -1,7 +1,7 @@
 # publish-hexium
 
 Composite GitHub Action shared by the el_team Valheim mods (`../warden`, `../heraldry`,
-`../spearbreaker`, `../cask`): uploads a version, submits it, then sets the listing's categories and
+`../spearbreaker`, `../hearthfire`): uploads a version, submits it, then sets the listing's categories and
 install location. Each mod keeps only a `hexium.json`; its `build.yml` `hexium` job runs the action
 as one step on `v*` tags.
 
@@ -24,4 +24,4 @@ as one step on `v*` tags.
 - The token is a team API token with publish rights. Never echo it, and keep it out of URLs.
 - Nothing here can be tested locally without bash; `check.yml` runs on push. The real upload is
   only exercised by a mod's release, so say so when a change touches the API calls.
-- Commits: plain imperative, sentence-case subject, no type prefix; work directly on `main`.
+- Commits and git workflow follow `../CLAUDE.md`.
