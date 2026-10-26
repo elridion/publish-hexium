@@ -1,0 +1,37 @@
+name: Publish to Hexium
+description: Upload a Thunderstore-format Valheim mod package to Hexium, submit it as a new version and set the listing's categories and install location.
+
+inputs:
+  token:
+    description: Hexium team API token. Keep it in a secret, ideally behind a protected environment.
+    required: true
+  package:
+    description: Path or glob of the package zip; must match exactly one file.
+    required: true
+  metadata:
+    description: The mod's hexium.json (package name, categories, install location).
+    default: hexium.json
+  author:
+    description: Hexium team namespace the package is published under.
+    default: el_team
+  api:
+    description: Hexium API base URL.
+    default: https://hexium.gg/api/experimental
+
+runs:
+  using: composite
+  steps:
+    - name: Publish to Hexium
+      shell: bash
+      env:
+        HEXIUM_TOKEN: ${{ inputs.token }}
+        HEXIUM_AUTHOR: ${{ inputs.author }}
+        HEXIUM_API: ${{ inputs.api }}
+        PACKAGE: ${{ inputs.package }}
+        METADATA: ${{ inputs.metadata }}
+      run: |
+        shopt -s nullglob
+        # shellcheck disable=SC2206 # the glob is meant to expand
+        files=( $PACKAGE )
+        [ ${#files[@]} -eq 1 ] || { echo "::error::package '$PACKAGE' matched ${#files[@]} files, expected 1"; exit 1; }
+        bash "$GITHUB_ACTION_PATH/hexium.sh" publish "${files[0]}" "$METADATA"

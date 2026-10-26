@@ -1,0 +1,43 @@
+# Lints the script and checks its argument and metadata validation without contacting Hexium.
+
+name: Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: ShellCheck
+        run: shellcheck hexium.sh
+
+      # Hexium is replaced by a closed port, so a run that gets past validation fails on its first
+      # request; the log shows which check stopped it.
+      - name: Validation
+        env:
+          HEXIUM_TOKEN: x
+          HEXIUM_API: http://127.0.0.1:9/api/experimental
+        run: |
+          cd "$RUNNER_TEMP"
+          script="$GITHUB_WORKSPACE/hexium.sh"
+          echo '{"name":"Test"}' > manifest.json && zip -q test.zip manifest.json
+          echo '{"name":"Test","categories":["Building"],"install_location":"both"}' > good.json
+          echo '{"name":"Other","categories":["Building"],"install_location":"both"}' > other.json
+          echo '{"name":"Test","categories":"Building","install_location":"everywhere"}' > bad.json
+          expect() { local want="$1"; shift; bash "$script" "$@" > out.log 2>&1 || true; cat out.log; grep -q "$want" out.log; }
+          expect 'usage:' frobnicate
+          expect 'needs a name' publish test.zip bad.json
+          expect 'needs a name' metadata bad.json
+          expect "names 'Other'" publish test.zip other.json
+          expect 'Initiating upload' publish test.zip good.json
+          ! grep -q 'Submitted' out.log
+          expect 'Failed to connect' metadata good.json
